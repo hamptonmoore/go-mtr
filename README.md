@@ -9,4 +9,5 @@ calculates these values over the entire package sequence.
 
 mtr is required to use this package.
 
-Documentation can be found on [godoc](http://godoc.org/github.com/fastly/go-mtr).
+Documentation can be found on [godoc](http://godoc.org/github.com/hamptonmoore/go-mtr).
+

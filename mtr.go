@@ -9,6 +9,7 @@ import (
 	"net"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 type Host struct {
@@ -56,19 +57,6 @@ func New(reportCycles int, host string, args ...string) *MTR {
 	return m
 }
 
-func parseByteNum(input []byte) int {
-	i := 0
-	for _, v := range input {
-		i = 10*i + int(v) - 48 // ascii 48 is `0`
-	}
-	return i
-}
-
-func parseHostnum(line []byte) (num int, finalFieldIdx int) {
-	finalFieldIdx = bytes.IndexByte(line[2:], ' ') + 2
-	return parseByteNum(line[2:finalFieldIdx]), finalFieldIdx + 1 // `c ### <content>`
-}
-
 func (m *MTR) processOutput() {
 	// h (host): host #, ip address
 	// d (dns): host #, resolved dns name
@@ -88,18 +76,20 @@ func (m *MTR) processOutput() {
 		line := output[:lineIdx]
 		output = output[lineIdx+1:]
 
-		hostnum, finalFieldIdx := parseHostnum(line)
+		lineSplit := strings.Split(string(line[:]), " ")
+		hostnum, _ := strconv.Atoi(lineSplit[1])
 
 		switch line[0] {
 		case 'h':
 			for len(m.Hosts) < hostnum+1 {
 				m.Hosts = append(m.Hosts, &Host{Hop: len(m.Hosts)})
 			}
-			m.Hosts[hostnum].IP = net.ParseIP(string(line[finalFieldIdx:]))
+			m.Hosts[hostnum].IP = net.ParseIP(lineSplit[2])
 		case 'd':
-			m.Hosts[hostnum].Name = string(line[finalFieldIdx:])
+			m.Hosts[hostnum].Name = lineSplit[2]
 		case 'p':
-			m.Hosts[hostnum].PacketMicrosecs = append(m.Hosts[hostnum].PacketMicrosecs, parseByteNum(line[finalFieldIdx:]))
+			ping_ms, _ := strconv.Atoi(lineSplit[2])
+			m.Hosts[hostnum].PacketMicrosecs = append(m.Hosts[hostnum].PacketMicrosecs, ping_ms)
 		}
 	}
 
